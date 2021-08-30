@@ -1,3 +1,4 @@
+# lyy. init version 2021/08/30
 import argparse
 import time
 import os
@@ -10,8 +11,8 @@ logging.basicConfig(format = logging.BASIC_FORMAT)
 lg.setLevel(logging.INFO)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--device', type = str, default='/dev/video0')
-parser.add_argument('-t', '--target_dir', type = str, default='.', help = 'the dir to save image and video')
+parser.add_argument('-d', '--device', type = str, default='/dev/video0', help = 'for example:/dev/video0')
+parser.add_argument('-t', '--target_dir', type = str, default='.', help = 'the dir to save image and video, default .')
 parser.add_argument('-r', '--resolution', type = str, default='640x480', help = 'set resolution, widht*height')
 
 args = parser.parse_args()
@@ -50,12 +51,15 @@ def main(args):
     if not cap.isOpened():
         lg.error(f'can not open device {args.device}')
         return 
+    fps = None
     if not input_is_video(args.device):
         w, h = parse_resolution(args.resolution)
         ret = cap.set(cv2.CAP_PROP_FRAME_WIDTH, w)
         assert ret, f'can not set frame widht {w}'
         ret = cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
         assert ret, f'can not set frame height {h}' 
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        lg.info(f'get fps {fps} from devcie')
     videoWriter = None
     while cap.isOpened():
         ret, frame = cap.read()
@@ -80,7 +84,7 @@ def main(args):
                 os.makedirs(args.target_dir, exist_ok= True)
                 file_name =os.path.join(args.target_dir, time.strftime("%H_%M_%S.avi"))
                 lg.info(f'ready to save video to {file_name}')
-                videoWriter = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 25, (w, h))
+                videoWriter = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), fps if fps else 20, (w, h))
             else:
                 videoWriter.release()
                 videoWriter = None
